@@ -3,7 +3,9 @@ import {
   Activity,
   ArrowLeft,
   Bell,
+  BookOpen,
   Bot,
+  Clock,
   Check,
   ChevronRight,
   Code2,
@@ -15,11 +17,13 @@ import {
   Mail,
   NotebookPen,
   Phone,
+  PenLine,
   RadioTower,
   Save,
   Shield,
   SlidersHorizontal,
   Sparkles,
+  Tag,
   Trash2,
   User,
   X,
@@ -37,7 +41,7 @@ interface UserSettingsPageProps {
   onSignOut: () => void | Promise<void>;
 }
 
-type SettingsTab = 'overview' | 'notifications' | 'strategies' | 'profile';
+type SettingsTab = 'overview' | 'journal' | 'notifications' | 'strategies' | 'profile';
 
 interface ParsedStrategy {
   name?: string;
@@ -192,6 +196,14 @@ export function UserSettingsPage({
       accent: 'from-cyan-400 to-emerald-400',
     },
     {
+      id: 'journal' as const,
+      title: 'Journal Hearth',
+      kicker: 'Recent notes',
+      description: 'A warmer place for reflections, tags, and market memory.',
+      icon: BookOpen,
+      accent: 'from-rose-200 to-amber-300',
+    },
+    {
       id: 'notifications' as const,
       title: 'Signal Relay',
       kicker: 'Telegram',
@@ -245,9 +257,45 @@ export function UserSettingsPage({
     { label: 'Saved Logic', value: String(savedStrategies.length), detail: 'Strategy playbooks', icon: NotebookPen, tone: 'text-amber-300' },
   ];
 
+  const recentNotes = [
+    {
+      title: 'Morning bias felt clean after London open',
+      excerpt: 'Price respected the first pullback. Next time, wait for the second candle close before scaling.',
+      tags: ['London', 'Discipline'],
+      time: 'Today, 8:42 AM',
+      accent: 'from-rose-200 to-amber-200',
+    },
+    {
+      title: 'News window needed more breathing room',
+      excerpt: 'Spread widened faster than expected. Keep the alert, but widen the no-trade buffer by five minutes.',
+      tags: ['News', 'Risk'],
+      time: 'Yesterday, 3:18 PM',
+      accent: 'from-cyan-200 to-emerald-200',
+    },
+    {
+      title: 'Good patience on the retest',
+      excerpt: 'The setup was slower than usual, but the journal note kept the plan calm and simple.',
+      tags: ['Patience', 'Replay'],
+      time: 'Mon, 10:05 AM',
+      accent: 'from-violet-200 to-sky-200',
+    },
+  ];
+
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md" onClick={onClose} />
+
+      <style>{`
+        @keyframes settings-tab-in {
+          from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(8px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes note-card-in {
+          from { opacity: 0; transform: translateY(18px) rotate(var(--note-tilt, 0deg)); }
+          to { opacity: 1; transform: translateY(0) rotate(var(--note-tilt, 0deg)); }
+        }
+      `}</style>
 
       <div className={`fixed inset-2 z-50 overflow-hidden rounded-lg border sm:inset-5 ${shellClass}`}>
         <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] [background-size:44px_44px]" />
@@ -322,16 +370,16 @@ export function UserSettingsPage({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`group relative flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all duration-300 ${
+                      className={`group relative flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all duration-300 ease-out hover:shadow-[0_18px_45px_rgba(15,23,42,0.14)] active:translate-y-0 ${
                         isActive
                           ? isDark
                             ? 'border-cyan-300/35 bg-white/[0.09] shadow-[0_16px_50px_rgba(34,211,238,0.08)]'
                             : 'border-cyan-700/25 bg-white shadow-[0_16px_42px_rgba(14,116,144,0.12)]'
-                          : `${panelClass} hover:-translate-y-0.5`
+                          : `${panelClass} hover:-translate-y-1 hover:scale-[1.015]`
                       }`}
                     >
-                      <span className={`mt-1 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${tab.accent} text-[#101317]`}>
-                        <Icon className="h-4 w-4" />
+                      <span className={`mt-1 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${tab.accent} text-[#101317] shadow-sm transition-all duration-300 group-hover:-rotate-3 group-hover:scale-110 group-active:scale-95`}>
+                        <Icon className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={`block text-[10px] font-semibold uppercase tracking-[0.18em] ${subtleText}`}>{tab.kicker}</span>
@@ -365,6 +413,7 @@ export function UserSettingsPage({
             </aside>
 
             <main className="min-h-0 overflow-y-auto p-4 sm:p-5">
+              <div key={activeTab} style={{ animation: 'settings-tab-in 340ms cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
               {activeTab === 'overview' && (
                 <div className="space-y-4">
                   <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
@@ -404,7 +453,7 @@ export function UserSettingsPage({
                   </section>
 
                   <section className="grid gap-4 xl:grid-cols-3">
-                    {tabs.slice(1).map((tab) => {
+                    {tabs.filter((tab) => ['journal', 'strategies', 'notifications'].includes(tab.id)).map((tab) => {
                       const Icon = tab.icon;
                       return (
                         <button
@@ -425,6 +474,83 @@ export function UserSettingsPage({
                       );
                     })}
                   </section>
+                </div>
+              )}
+
+              {activeTab === 'journal' && (
+                <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+                  <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
+                    <div className="p-5 sm:p-7">
+                      <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-rose-200/20 bg-rose-200/10 text-rose-100' : 'border-rose-700/15 bg-rose-50 text-rose-800'}`}>
+                        <PenLine className="h-4 w-4" />
+                        Quiet trading memory
+                      </div>
+                      <h2 className={`mt-5 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl ${strongText}`}>
+                        A softer place to notice what the chart taught you.
+                      </h2>
+                      <p className={`mt-4 max-w-2xl text-sm leading-7 ${mutedText}`}>
+                        Recent notes are arranged like a desk stack: warm, scannable, and personal enough to make review feel less clinical.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 px-5 pb-5 sm:px-7 sm:pb-7">
+                      {recentNotes.map((note, index) => (
+                        <article
+                          key={note.title}
+                          className={`relative rounded-lg border p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_60px_rgba(15,23,42,0.16)] ${isDark ? 'border-white/10 bg-[#161316]' : 'border-black/10 bg-[#fffaf2]'}`}
+                          style={{
+                            animation: `note-card-in 420ms ${index * 90}ms cubic-bezier(0.2, 0.8, 0.2, 1) both`,
+                            transform: `rotate(${[-0.6, 0.4, -0.2][index]}deg)`,
+                            ['--note-tilt' as string]: `${[-0.6, 0.4, -0.2][index]}deg`,
+                          }}
+                        >
+                          <div className={`absolute left-0 top-4 h-12 w-1 rounded-r-full bg-gradient-to-b ${note.accent}`} />
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className={`flex items-center gap-2 text-xs ${subtleText}`}>
+                                <Clock className="h-3.5 w-3.5" />
+                                {note.time}
+                              </p>
+                              <h3 className={`mt-3 text-xl font-semibold leading-snug ${strongText}`}>{note.title}</h3>
+                            </div>
+                            <BookOpen className={`h-5 w-5 ${mutedText}`} />
+                          </div>
+                          <p className={`mt-3 text-sm leading-7 ${mutedText}`}>{note.excerpt}</p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {note.tags.map((tag) => (
+                              <span key={tag} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs ${isDark ? 'border-white/10 bg-white/[0.05] text-white/62' : 'border-black/10 bg-white text-black/58'}`}>
+                                <Tag className="h-3 w-3" />
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+
+                  <aside className="space-y-4">
+                    <section className={`rounded-lg border p-5 ${panelClass}`}>
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-300" />
+                        <h3 className={`text-sm font-semibold ${strongText}`}>Evening review</h3>
+                      </div>
+                      <p className={`mt-3 text-sm leading-7 ${mutedText}`}>
+                        Tag one win, one hesitation, and one adjustment. Small honest notes make the workspace feel like it belongs to you.
+                      </p>
+                    </section>
+
+                    <section className={`rounded-lg border p-5 ${isDark ? 'border-amber-200/15 bg-amber-200/[0.06]' : 'border-amber-700/15 bg-amber-50'}`}>
+                      <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleText}`}>Desk mood</p>
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        {['Calm', 'Clear', 'Ready'].map((item) => (
+                          <div key={item} className={`rounded-lg border px-3 py-4 text-center text-sm font-semibold ${isDark ? 'border-white/10 bg-black/20 text-white/75' : 'border-black/10 bg-white text-black/65'}`}>
+                            {item}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </aside>
                 </div>
               )}
 
@@ -642,6 +768,7 @@ export function UserSettingsPage({
                   </aside>
                 </div>
               )}
+              </div>
             </main>
           </div>
 
