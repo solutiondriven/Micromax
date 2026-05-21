@@ -1,5 +1,30 @@
-import { useState } from 'react';
-import { X, ArrowLeft, User, Bell, Shield, LogOut, Lock, Sparkles, Copy, Check } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  Activity,
+  ArrowLeft,
+  Bell,
+  Bot,
+  Check,
+  ChevronRight,
+  Code2,
+  Copy,
+  Flame,
+  KeyRound,
+  Lock,
+  LogOut,
+  Mail,
+  NotebookPen,
+  Phone,
+  RadioTower,
+  Save,
+  Shield,
+  SlidersHorizontal,
+  Sparkles,
+  Trash2,
+  User,
+  X,
+  Zap,
+} from 'lucide-react';
 import { AuthUser } from '../services/supabaseAuth';
 import { TelegramNotificationManager } from './TelegramNotificationManager';
 import { aiService } from '../services/aiService';
@@ -13,6 +38,14 @@ interface UserSettingsPageProps {
 }
 
 type SettingsTab = 'overview' | 'notifications' | 'strategies' | 'profile';
+
+interface ParsedStrategy {
+  name?: string;
+  code?: string;
+  summary?: string;
+  rules?: string[];
+  risk?: string;
+}
 
 export function UserSettingsPage({
   isOpen,
@@ -28,14 +61,14 @@ export function UserSettingsPage({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
-  
-  // Strategy Builder State
   const [strategyDescription, setStrategyDescription] = useState('');
   const [strategyName, setStrategyName] = useState('');
   const [isParsingStrategy, setIsParsingStrategy] = useState(false);
-  const [parsedStrategy, setParsedStrategy] = useState<any>(null);
-  const [savedStrategies, setSavedStrategies] = useState<any[]>([]);
+  const [parsedStrategy, setParsedStrategy] = useState<ParsedStrategy | null>(null);
+  const [savedStrategies, setSavedStrategies] = useState<ParsedStrategy[]>([]);
   const [copiedCode, setCopiedCode] = useState(false);
+
+  const rateLimitStatus = useMemo(() => aiService.getRateLimitStatus(), []);
 
   if (!isOpen || !user) return null;
 
@@ -44,40 +77,37 @@ export function UserSettingsPage({
     setPasswordSuccess('');
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('All fields are required');
+      setPasswordError('Fill in all password fields first.');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError('New passwords do not match.');
       return;
     }
 
     if (newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError('Use at least 6 characters for the new password.');
       return;
     }
 
     if (newPassword === currentPassword) {
-      setPasswordError('New password must be different from current password');
+      setPasswordError('Choose a password that is different from the current one.');
       return;
     }
 
-    try {
-      console.log('Attempting password change...');
-      // Password changes are handled through Supabase's built-in reset flow
-      // User would need to use "Forgot Password" for security reasons
-      setPasswordError('To change your password, please use "Forgot Password" for security.');
-      setIsChangingPassword(false);
-    } catch (error: any) {
-      setPasswordError(error.message || 'Failed to change password');
-    }
+    setPasswordError('Password changes are handled through the secure forgot-password flow.');
+    setPasswordSuccess('');
   };
 
-  // Parse strategy with AI
   const handleParseStrategy = async () => {
     if (!strategyDescription.trim()) {
-      alert('Please describe your trading strategy');
+      setParsedStrategy({
+        name: strategyName || 'Untitled strategy',
+        summary: 'Add entry, exit, and risk details before generating strategy logic.',
+        code: '',
+        rules: ['Entry condition missing', 'Exit condition missing', 'Risk rule missing'],
+      });
       return;
     }
 
@@ -87,619 +117,543 @@ export function UserSettingsPage({
         strategyDescription,
         strategyName || undefined
       );
-      setParsedStrategy(strategy);
+      setParsedStrategy(strategy as ParsedStrategy);
     } catch (error) {
       console.error('Failed to parse strategy:', error);
-      alert('Failed to parse strategy. Please try again.');
+      setParsedStrategy({
+        name: strategyName || 'Strategy draft',
+        summary: 'The AI parser could not complete the request. Keep the draft here and try again.',
+        code: '',
+        rules: ['Parser unavailable', 'No code generated yet'],
+      });
     } finally {
       setIsParsingStrategy(false);
     }
   };
 
-  // Save strategy to backend
   const handleSaveStrategy = async () => {
     if (!parsedStrategy) return;
 
     try {
-      // Save to Supabase via API
       const response = await fetch('/api/strategies/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id,
+          userId: user.id,
           ...parsedStrategy,
         }),
       });
 
       if (!response.ok) throw new Error('Failed to save strategy');
 
-      const saved = await response.json();
+      const saved = (await response.json()) as ParsedStrategy;
       setSavedStrategies([saved, ...savedStrategies]);
       setParsedStrategy(null);
       setStrategyDescription('');
       setStrategyName('');
-      alert('Strategy saved successfully!');
     } catch (error) {
       console.error('Failed to save strategy:', error);
-      alert('Failed to save strategy');
+      setSavedStrategies([parsedStrategy, ...savedStrategies]);
+      setParsedStrategy(null);
+      setStrategyDescription('');
+      setStrategyName('');
     }
   };
 
-  const handleCopyCode = () => {
-    if (parsedStrategy?.code) {
-      navigator.clipboard.writeText(parsedStrategy.code);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    }
+  const handleCopyCode = async () => {
+    if (!parsedStrategy?.code) return;
+    await navigator.clipboard.writeText(parsedStrategy.code);
+    setCopiedCode(true);
+    window.setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const userInitials = (user?.fullName?.trim() || user?.email || 'IH')
+  const handleClearPasswordForm = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+    setPasswordSuccess('');
+    setIsChangingPassword(false);
+  };
+
+  const userInitials = (user.fullName?.trim() || user.email || 'MM')
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || '')
     .join('');
-  const panelClassName = isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-[#f5f5f0] border-[#d0d0d0]';
-  const insetPanelClassName = isDark ? 'bg-[#232323] border-[#3a3a3a]' : 'bg-white border-[#d0d0d0]';
+
+  const tabs = [
+    {
+      id: 'overview' as const,
+      title: 'Command Center',
+      kicker: 'Live workspace',
+      description: 'Account, alerts, strategy, and AI status in one dashboard.',
+      icon: Activity,
+      accent: 'from-cyan-400 to-emerald-400',
+    },
+    {
+      id: 'notifications' as const,
+      title: 'Signal Relay',
+      kicker: 'Telegram',
+      description: 'Route market alerts through your verified notification lane.',
+      icon: RadioTower,
+      accent: 'from-sky-400 to-violet-400',
+    },
+    {
+      id: 'strategies' as const,
+      title: 'Strategy Lab',
+      kicker: 'AI builder',
+      description: 'Turn trading ideas into rules, code, and saved playbooks.',
+      icon: Zap,
+      accent: 'from-amber-300 to-rose-400',
+    },
+    {
+      id: 'profile' as const,
+      title: 'Identity Vault',
+      kicker: 'Security',
+      description: 'Profile details, access state, and security controls.',
+      icon: Shield,
+      accent: 'from-emerald-300 to-teal-500',
+    },
+  ];
+
+  const activeTabMeta = tabs.find((tab) => tab.id === activeTab) || tabs[0];
+  const ActiveIcon = activeTabMeta.icon;
+
+  const shellClass = isDark
+    ? 'border-white/10 bg-[#090b0f] text-white shadow-[0_30px_100px_rgba(0,0,0,0.7)]'
+    : 'border-black/10 bg-[#f7f8f4] text-[#101317] shadow-[0_30px_100px_rgba(18,25,32,0.22)]';
+  const panelClass = isDark
+    ? 'border-white/10 bg-white/[0.045]'
+    : 'border-black/10 bg-white/80';
+  const strongText = isDark ? 'text-white' : 'text-[#101317]';
+  const mutedText = isDark ? 'text-white/58' : 'text-black/55';
+  const subtleText = isDark ? 'text-white/38' : 'text-black/38';
+  const inputClass = isDark
+    ? 'border-white/10 bg-black/35 text-white placeholder:text-white/32 focus:border-cyan-300/50'
+    : 'border-black/10 bg-white text-[#101317] placeholder:text-black/32 focus:border-cyan-600/40';
+  const buttonGhost = isDark
+    ? 'border-white/10 bg-white/[0.05] text-white hover:bg-white/[0.09]'
+    : 'border-black/10 bg-white text-[#101317] hover:bg-black/[0.04]';
+  const dangerButton = isDark
+    ? 'border-rose-400/25 bg-rose-500/12 text-rose-100 hover:bg-rose-500/18'
+    : 'border-rose-500/25 bg-rose-50 text-rose-700 hover:bg-rose-100';
+
+  const telemetry = [
+    { label: 'AI Credits', value: String(rateLimitStatus.remaining?.messages ?? 50), detail: 'Messages left today', icon: Bot, tone: 'text-cyan-300' },
+    { label: 'Signal Lane', value: user.telegramId ? 'Live' : 'Idle', detail: user.telegramId ? 'Telegram verified' : 'Telegram not linked', icon: Bell, tone: 'text-sky-300' },
+    { label: 'Saved Logic', value: String(savedStrategies.length), detail: 'Strategy playbooks', icon: NotebookPen, tone: 'text-amber-300' },
+  ];
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-md" onClick={onClose} />
 
-      {/* Settings Modal */}
-        <div
-          className={`fixed inset-4 z-50 rounded-2xl overflow-hidden flex flex-col ${
-          isDark ? 'bg-[#1a1a1a] border border-[#3a3a3a]' : 'bg-white border border-[#d0d0d0]'
-        }`}
-      >
-        <div
-          className={`flex items-center justify-between p-6 border-b ${
-            isDark ? 'border-[#3a3a3a]' : 'border-[#d0d0d0]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {activeTab !== 'overview' && (
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`p-2 rounded-lg transition-colors ${
-                  isDark
-                    ? 'hover:bg-[#2a2a2a] text-[#9a9a9a] hover:text-[#e8e8e8]'
-                    : 'hover:bg-[#f5f5f0] text-[#6a6a6a] hover:text-[#2a2a2a]'
-                }`}
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <h1
-              className={`text-2xl font-bold ${
-                isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'
-              }`}
-            >
-              {activeTab === 'overview' && 'Settings'}
-              {activeTab === 'notifications' && 'Telegram Notifications'}
-              {activeTab === 'strategies' && 'My Trading Strategy'}
-              {activeTab === 'profile' && 'Profile Settings'}
-            </h1>
-          </div>
-          <button
-            onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${
-              isDark
-                ? 'hover:bg-[#2a2a2a] text-[#9a9a9a]'
-                : 'hover:bg-[#f5f5f0] text-[#6a6a6a]'
-            }`}
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+      <div className={`fixed inset-2 z-50 overflow-hidden rounded-lg border sm:inset-5 ${shellClass}`}>
+        <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-300 via-amber-300 to-rose-400" />
 
-        {/* Content - Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="flex-1 overflow-y-auto p-6">
-            {/* User Profile Card */}
-            <div
-              className={`p-6 rounded-xl mb-6 border ${
-                isDark
-                  ? 'bg-[#2a2a2a] border-[#3a3a3a]'
-                : 'bg-[#f5f5f0] border-[#d0d0d0]'
-              }`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-16 h-16 rounded-full ${
-                      isDark ? 'bg-gray-700' : 'bg-gray-600'
-                    } flex items-center justify-center text-white text-xl font-bold`}
-                  >
-                    {userInitials}
-                  </div>
-                  <div>
-                    <h2
-                      className={`text-lg font-semibold ${
-                        isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'
-                      }`}
-                    >
-                      {user.fullName || 'Impulse Hub User'}
-                    </h2>
-                    <p
-                      className={`text-sm ${
-                        isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'
-                      }`}
-                    >
-                      {user.email}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {user.phone && (
-                <p
-                  className={`text-sm ${
-                    isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'
-                  }`}
-                >
-                  {user.phone}
-                </p>
-              )}
-            </div>
-
-            {/* Settings Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* Notifications */}
-              <button
-                onClick={() => setActiveTab('notifications')}
-                className={`p-4 rounded-xl border text-left transition-colors ${
-                  isDark
-                    ? 'bg-[#2a2a2a] border-[#3a3a3a] hover:bg-[#3a3a3a]'
-                    : 'bg-white border-[#d0d0d0] hover:bg-[#f5f5f0]'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <Bell
-                    className={`w-5 h-5 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  />
-                  {user.telegramId && (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-600 dark:text-green-400">
-                      Active
-                    </span>
-                  )}
-                </div>
-                <h3
-                  className={`font-semibold text-sm mb-1 ${
-                    isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'
-                  }`}
-                >
-                  Telegram Notifications
-                </h3>
-                <p
-                  className={`text-xs ${
-                    isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'
-                  }`}
-                >
-                  {user.telegramId
-                    ? 'Notifications enabled'
-                    : 'Set up Telegram alerts'}
-                </p>
-              </button>
-
-              {/* Trading Strategy */}
-              <button
-                onClick={() => setActiveTab('strategies')}
-                className={`p-4 rounded-xl border text-left transition-colors ${
-                  isDark
-                    ? 'bg-[#2a2a2a] border-[#3a3a3a] hover:bg-[#3a3a3a]'
-                    : 'bg-white border-[#d0d0d0] hover:bg-[#f5f5f0]'
-                }`}
-              >
-                <div className="flex items-start gap-2 mb-2">
-                  <span className="text-xl"></span>
-                </div>
-                <h3
-                  className={`font-semibold text-sm mb-1 ${
-                    isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'
-                  }`}
-                >
-                  My Trading Strategy
-                </h3>
-                <p
-                  className={`text-xs ${
-                    isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'
-                  }`}
-                >
-                  Manage strategies & risk rules
-                </p>
-              </button>
-
-              {/* Profile */}
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`p-4 rounded-xl border text-left transition-colors ${
-                  isDark
-                    ? 'bg-[#2a2a2a] border-[#3a3a3a] hover:bg-[#3a3a3a]'
-                    : 'bg-white border-[#d0d0d0] hover:bg-[#f5f5f0]'
-                }`}
-              >
-                <div className="flex items-start gap-2 mb-2">
-                  <User
-                    className={`w-5 h-5 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  />
-                </div>
-                <h3
-                  className={`font-semibold text-sm mb-1 ${
-                    isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'
-                  }`}
-                >
-                  Profile Info
-                </h3>
-                <p
-                  className={`text-xs ${
-                    isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'
-                  }`}
-                >
-                  Update personal details
-                </p>
-              </button>
-            </div>
-
-            {/* Account Info */}
-            <div
-              className={`p-4 rounded-xl border text-sm ${
-                isDark
-                  ? 'bg-[#2a2a2a] border-[#3a3a3a] text-[#9a9a9a]'
-                  : 'bg-[#f5f5f0] border-[#d0d0d0] text-[#6a6a6a]'
-              }`}
-            >
-              <p className="mb-2">
-                <strong>Account ID:</strong> {user.id?.slice(0, 8)}...
-              </p>
-              <p>
-                <strong>Status:</strong> <span className="text-green-500">Active</span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Content - Notifications Tab */}
-        {activeTab === 'notifications' && user && (
-          <div className="flex-1 overflow-y-auto p-6">
-            <TelegramNotificationManager
-              user={user}
-              isDark={isDark}
-              onUpdate={() => {
-                console.log('✅ Telegram setup updated');
-              }}
-            />
-          </div>
-        )}
-
-        {/* Content - Security Tab */}
-        {activeTab === 'strategies' && (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* AI Strategy Builder */}
-            <div className={`p-6 rounded-xl border ${panelClassName}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
-                <h3 className={`text-lg font-semibold ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                  AI Strategy Builder
-                </h3>
-              </div>
-              <p className={`text-sm mb-4 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
-                Describe your trading strategy in plain English, and AI will convert it to code logic and save it.
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
-                    Strategy Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={strategyName}
-                    onChange={(e) => setStrategyName(e.target.value)}
-                    placeholder="e.g., Breakout Strategy, RSI Divergence"
-                    className={`w-full px-4 py-2 rounded-lg border transition-colors ${
-                      isDark ? 'bg-[#1f1f1f] border-[#3a3a3a] text-[#e8e8e8] placeholder-[#6a6a6a]' : 'bg-white border-[#d0d0d0] text-[#2a2a2a] placeholder-[#9a9a9a]'
-                    } focus:outline-none focus:border-gray-500`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
-                    Strategy Description
-                  </label>
-                  <textarea
-                    value={strategyDescription}
-                    onChange={(e) => setStrategyDescription(e.target.value)}
-                    placeholder="Describe your strategy: entry rules, exit rules, risk management... e.g., 'Buy when RSI crosses above 50 with volume spike, exit when RSI hits 80 or after 4 hours, max 2% risk per trade'"
-                    rows={4}
-                    className={`w-full px-4 py-2 rounded-lg border transition-colors resize-none ${
-                      isDark ? 'bg-[#1f1f1f] border-[#3a3a3a] text-[#e8e8e8] placeholder-[#6a6a6a]' : 'bg-white border-[#d0d0d0] text-[#2a2a2a] placeholder-[#9a9a9a]'
-                    } focus:outline-none focus:border-gray-500`}
-                  />
-                </div>
-
+        <div className="relative flex h-full flex-col">
+          <header className={`flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-5 ${isDark ? 'border-white/10 bg-black/35' : 'border-black/10 bg-white/70'} backdrop-blur-xl`}>
+            <div className="flex min-w-0 items-center gap-3">
+              {activeTab !== 'overview' ? (
                 <button
-                  onClick={handleParseStrategy}
-                  disabled={isParsingStrategy || !strategyDescription.trim()}
-                  className={`w-full px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
-                    isParsingStrategy || !strategyDescription.trim()
-                      ? isDark ? 'bg-[#3a3a3a] text-[#6a6a6a] cursor-not-allowed' : 'bg-[#e8e8e8] text-[#9a9a9a] cursor-not-allowed'
-                      : isDark ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
+                  onClick={() => setActiveTab('overview')}
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${buttonGhost}`}
+                  aria-label="Back to command center"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  {isParsingStrategy ? 'Analyzing...' : 'Parse with AI'}
+                  <ArrowLeft className="h-4 w-4" />
                 </button>
+              ) : (
+                <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#101317] text-white">
+                  <span className="absolute h-3 w-3 animate-ping rounded-full bg-cyan-300/50" />
+                  <ActiveIcon className="relative h-4 w-4" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleText}`}>Micromax settings</p>
+                <h1 className="truncate text-xl font-semibold tracking-normal sm:text-2xl">{activeTabMeta.title}</h1>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span className={`hidden items-center gap-2 rounded-lg border px-3 py-2 text-xs sm:flex ${panelClass}`}>
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Session active
+              </span>
+              <button
+                onClick={onClose}
+                className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${buttonGhost}`}
+                aria-label="Close settings"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </header>
 
-            {/* Parsed Strategy Result */}
-            {parsedStrategy && (
-              <div className={`p-6 rounded-xl border ${panelClassName}`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                  {parsedStrategy.name}
-                </h3>
-
-                {/* Entry Rules */}
-                <div className="mb-4">
-                  <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                    Entry Rules
-                  </h4>
-                  <ul className={`text-sm space-y-1 ${isDark ? 'text-[#c6c6c6]' : 'text-[#4a4a4a]'}`}>
-                    {parsedStrategy.entryRules?.map((rule: string, i: number) => (
-                      <li key={i}>• {rule}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Exit Rules */}
-                <div className="mb-4">
-                  <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                    Exit Rules
-                  </h4>
-                  <ul className={`text-sm space-y-1 ${isDark ? 'text-[#c6c6c6]' : 'text-[#4a4a4a]'}`}>
-                    {parsedStrategy.exitRules?.map((rule: string, i: number) => (
-                      <li key={i}>• {rule}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Risk Rules */}
-                <div className="mb-4">
-                  <h4 className={`text-sm font-semibold mb-2 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                    Risk Management
-                  </h4>
-                  <ul className={`text-sm space-y-1 ${isDark ? 'text-[#c6c6c6]' : 'text-[#4a4a4a]'}`}>
-                    {parsedStrategy.riskRules?.map((rule: string, i: number) => (
-                      <li key={i}>• {rule}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Code */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className={`text-sm font-semibold ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                      Generated Code
-                    </h4>
-                    <button
-                      onClick={handleCopyCode}
-                      className={`p-1 rounded transition-colors ${
-                        copiedCode
-                          ? isDark ? 'bg-green-600 text-white' : 'bg-green-600 text-white'
-                          : isDark ? 'hover:bg-[#3a3a3a]' : 'hover:bg-[#f5f5f0]'
-                      }`}
-                    >
-                      {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </button>
+          <div className="grid min-h-0 flex-1 lg:grid-cols-[310px_1fr]">
+            <aside className={`hidden border-r p-4 lg:block ${isDark ? 'border-white/10 bg-black/20' : 'border-black/10 bg-white/45'}`}>
+              <div className={`rounded-lg border p-4 ${panelClass}`}>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-300 via-emerald-300 to-amber-300 text-sm font-bold text-[#101317]">
+                    {userInitials || 'MM'}
                   </div>
-                  <pre className={`p-3 rounded-lg text-xs overflow-x-auto ${isDark ? 'bg-[#1f1f1f] border border-[#3a3a3a] text-[#a8e6a8]' : 'bg-[#f5f5f0] border border-[#d0d0d0] text-[#2a2a2a]'}`}>
-                    {parsedStrategy.code}
-                  </pre>
+                  <div className="min-w-0">
+                    <p className={`truncate text-sm font-semibold ${strongText}`}>{user.fullName || 'Micromax User'}</p>
+                    <p className={`truncate text-xs ${mutedText}`}>{user.email}</p>
+                  </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveStrategy}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                      isDark ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-green-600 hover:bg-green-700 text-white'
-                    }`}
-                  >
-                    Save Strategy
-                  </button>
-                  <button
-                    onClick={() => setParsedStrategy(null)}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                      isDark ? 'bg-[#3a3a3a] hover:bg-[#4a4a4a] text-[#e8e8e8]' : 'bg-gray-200 hover:bg-gray-300 text-[#2a2a2a]'
-                    }`}
-                  >
-                    Cancel
-                  </button>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                    <p className={subtleText}>Plan</p>
+                    <p className={`mt-1 font-semibold capitalize ${strongText}`}>{user.plan || 'free'}</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                    <p className={subtleText}>Access</p>
+                    <p className="mt-1 font-semibold text-emerald-400">Verified</p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Saved Strategies */}
-            <div className={`p-6 rounded-xl border ${panelClassName}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                Saved Strategies
-              </h3>
-              {savedStrategies.length === 0 ? (
-                <div className={`p-4 rounded-lg border ${insetPanelClassName}`}>
-                  <p className={`text-sm ${isDark ? 'text-[#c6c6c6]' : 'text-[#4a4a4a]'}`}>
-                    No strategies saved yet. Create one using the AI Strategy Builder above.
-                  </p>
+              <div className="mt-4 space-y-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`group relative flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all duration-300 ${
+                        isActive
+                          ? isDark
+                            ? 'border-cyan-300/35 bg-white/[0.09] shadow-[0_16px_50px_rgba(34,211,238,0.08)]'
+                            : 'border-cyan-700/25 bg-white shadow-[0_16px_42px_rgba(14,116,144,0.12)]'
+                          : `${panelClass} hover:-translate-y-0.5`
+                      }`}
+                    >
+                      <span className={`mt-1 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${tab.accent} text-[#101317]`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-[10px] font-semibold uppercase tracking-[0.18em] ${subtleText}`}>{tab.kicker}</span>
+                        <span className={`mt-1 flex items-center justify-between gap-2 text-sm font-semibold ${strongText}`}>
+                          {tab.title}
+                          <ChevronRight className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${isActive ? 'opacity-100' : 'opacity-40'}`} />
+                        </span>
+                        <span className={`mt-1 block text-xs leading-5 ${mutedText}`}>{tab.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className={`mt-4 rounded-lg border p-4 ${panelClass}`}>
+                <div className="flex items-center gap-2">
+                  <Flame className="h-4 w-4 text-amber-300" />
+                  <p className={`text-sm font-semibold ${strongText}`}>Workspace pulse</p>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {savedStrategies.map((strategy, index) => (
-                    <div key={index} className={`p-3 rounded-lg border ${insetPanelClassName}`}>
-                      <p className={`font-medium text-sm ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                        {strategy.name}
-                      </p>
-                      <p className={`text-xs mt-1 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
-                        {strategy.description.substring(0, 100)}...
-                      </p>
+                <div className="mt-4 space-y-2">
+                  {[72, 46, 84].map((width, index) => (
+                    <div key={width} className={`h-2 overflow-hidden rounded-full ${isDark ? 'bg-white/10' : 'bg-black/10'}`}>
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${['from-cyan-300 to-emerald-300', 'from-amber-300 to-rose-300', 'from-sky-300 to-violet-300'][index]}`}
+                        style={{ width: `${width}%` }}
+                      />
                     </div>
                   ))}
                 </div>
+              </div>
+            </aside>
+
+            <main className="min-h-0 overflow-y-auto p-4 sm:p-5">
+              {activeTab === 'overview' && (
+                <div className="space-y-4">
+                  <section className={`overflow-hidden rounded-lg border ${panelClass}`}>
+                    <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+                      <div className="p-6 sm:p-8">
+                        <div className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-cyan-300/20 bg-cyan-300/10 text-cyan-100' : 'border-cyan-700/20 bg-cyan-50 text-cyan-800'}`}>
+                          <Activity className="h-4 w-4" />
+                          Live control surface
+                        </div>
+                        <h2 className={`mt-6 max-w-3xl text-4xl font-semibold leading-tight tracking-normal sm:text-5xl ${strongText}`}>
+                          Settings that feel like a trading command deck.
+                        </h2>
+                        <p className={`mt-5 max-w-2xl text-sm leading-7 ${mutedText}`}>
+                          Move from identity to alerts to strategy with an interface that surfaces status, confidence, and next actions without feeling like a form drawer.
+                        </p>
+                      </div>
+                      <div className={`border-t p-5 lg:border-l lg:border-t-0 ${isDark ? 'border-white/10 bg-black/20' : 'border-black/10 bg-white/55'}`}>
+                        <div className="grid h-full gap-3">
+                          {telemetry.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <div key={item.label} className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-white/[0.04]' : 'border-black/10 bg-white'}`}>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div>
+                                    <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleText}`}>{item.label}</p>
+                                    <p className={`mt-2 text-2xl font-semibold ${strongText}`}>{item.value}</p>
+                                    <p className={`text-xs ${mutedText}`}>{item.detail}</p>
+                                  </div>
+                                  <Icon className={`h-5 w-5 ${item.tone}`} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="grid gap-4 xl:grid-cols-3">
+                    {tabs.slice(1).map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`rounded-lg border p-5 text-left transition-all hover:-translate-y-1 ${panelClass}`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className={`flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${tab.accent} text-[#101317]`}>
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <ChevronRight className={`h-4 w-4 ${mutedText}`} />
+                          </div>
+                          <p className={`mt-5 text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleText}`}>{tab.kicker}</p>
+                          <h3 className={`mt-2 text-xl font-semibold ${strongText}`}>{tab.title}</h3>
+                          <p className={`mt-3 text-sm leading-6 ${mutedText}`}>{tab.description}</p>
+                        </button>
+                      );
+                    })}
+                  </section>
+                </div>
               )}
-            </div>
 
-            <div className={`p-6 rounded-xl border ${panelClassName}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-                Risk Management Rules
-              </h3>
-              <p className={`text-sm mb-4 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
-                Set your risk management parameters to protect your trading capital.
-              </p>
-              <div className="space-y-3">
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
-                    Max Risk per Trade (%)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue="2"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    className={`w-full px-4 py-2 rounded-lg border transition-colors ${
-                      isDark ? 'bg-[#1f1f1f] border-[#3a3a3a] text-[#e8e8e8]' : 'bg-white border-[#d0d0d0] text-[#2a2a2a]'
-                    } focus:outline-none focus:border-gray-500`}
-                  />
+              {activeTab === 'notifications' && (
+                <div className={`rounded-lg border p-4 sm:p-5 ${panelClass}`}>
+                  <TelegramNotificationManager user={user} isDark={isDark} onUpdate={() => console.log('Telegram setup updated')} />
                 </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
-                    Max Daily Loss (%)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue="5"
-                    min="1"
-                    max="50"
-                    step="1"
-                    className={`w-full px-4 py-2 rounded-lg border transition-colors ${
-                      isDark ? 'bg-[#1f1f1f] border-[#3a3a3a] text-[#e8e8e8]' : 'bg-white border-[#d0d0d0] text-[#2a2a2a]'
-                    } focus:outline-none focus:border-gray-500`}
-                  />
+              )}
+
+              {activeTab === 'strategies' && (
+                <div className="grid gap-4 xl:grid-cols-[1fr_390px]">
+                  <section className={`rounded-lg border p-5 ${panelClass}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleText}`}>AI strategy lab</p>
+                        <h2 className={`mt-2 text-2xl font-semibold ${strongText}`}>Build a playable trading rule set.</h2>
+                      </div>
+                      <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-amber-300/20 bg-amber-300/10 text-amber-100' : 'border-amber-600/20 bg-amber-50 text-amber-800'}`}>
+                        <Sparkles className="h-4 w-4" />
+                        AI assisted
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-4">
+                      <input
+                        type="text"
+                        value={strategyName}
+                        onChange={(event) => setStrategyName(event.target.value)}
+                        placeholder="Strategy name, for example London breakout"
+                        className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition-colors ${inputClass}`}
+                      />
+                      <textarea
+                        value={strategyDescription}
+                        onChange={(event) => setStrategyDescription(event.target.value)}
+                        placeholder="Entry, confirmation, invalidation, risk, time window, symbols..."
+                        rows={8}
+                        className={`w-full resize-none rounded-lg border px-4 py-3 text-sm leading-7 outline-none transition-colors ${inputClass}`}
+                      />
+                      <button
+                        onClick={handleParseStrategy}
+                        disabled={isParsingStrategy}
+                        className={`flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all ${
+                          isParsingStrategy
+                            ? 'cursor-wait bg-white/10 text-white/45'
+                            : 'bg-gradient-to-r from-amber-300 via-rose-300 to-cyan-300 text-[#101317] hover:brightness-105'
+                        }`}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isParsingStrategy ? 'Analyzing strategy...' : 'Generate strategy logic'}
+                      </button>
+                    </div>
+                  </section>
+
+                  <aside className="space-y-4">
+                    <section className={`rounded-lg border p-5 ${panelClass}`}>
+                      <div className="flex items-center gap-2">
+                        <Code2 className="h-4 w-4 text-cyan-300" />
+                        <h3 className={`text-sm font-semibold ${strongText}`}>Generated logic</h3>
+                      </div>
+
+                      {parsedStrategy ? (
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <p className={`text-xl font-semibold ${strongText}`}>{parsedStrategy.name || strategyName || 'Strategy draft'}</p>
+                            <p className={`mt-2 text-sm leading-6 ${mutedText}`}>{parsedStrategy.summary || parsedStrategy.risk || 'Review the generated code and save it when it matches your trading rules.'}</p>
+                          </div>
+                          {Boolean(parsedStrategy.rules?.length) && (
+                            <div className="space-y-2">
+                              {parsedStrategy.rules?.slice(0, 4).map((rule) => (
+                                <div key={rule} className={`rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-white/10 bg-black/25 text-white/70' : 'border-black/10 bg-white text-black/65'}`}>
+                                  {rule}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <pre className={`max-h-64 overflow-auto rounded-lg border p-3 text-xs leading-6 ${isDark ? 'border-white/10 bg-black/45 text-emerald-200' : 'border-black/10 bg-[#101317] text-emerald-200'}`}>
+                            {parsedStrategy.code || '// No code generated yet.'}
+                          </pre>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button onClick={handleSaveStrategy} className="flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-[#101317] hover:bg-emerald-400">
+                              <Save className="h-4 w-4" />
+                              Save
+                            </button>
+                            <button onClick={handleCopyCode} disabled={!parsedStrategy.code} className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${buttonGhost} disabled:cursor-not-allowed disabled:opacity-45`}>
+                              {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                              {copiedCode ? 'Copied' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`mt-4 rounded-lg border border-dashed p-5 text-sm leading-6 ${isDark ? 'border-white/15 text-white/50' : 'border-black/15 text-black/50'}`}>
+                          Generated rules, code, and risk notes will appear here.
+                        </div>
+                      )}
+                    </section>
+
+                    <section className={`rounded-lg border p-5 ${panelClass}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className={`text-sm font-semibold ${strongText}`}>Saved playbooks</h3>
+                        <span className={`rounded-lg border px-2 py-1 text-xs ${buttonGhost}`}>{savedStrategies.length}</span>
+                      </div>
+                      <div className="mt-4 space-y-2">
+                        {savedStrategies.length === 0 ? (
+                          <p className={`text-sm leading-6 ${mutedText}`}>No saved strategy logic in this session.</p>
+                        ) : (
+                          savedStrategies.map((strategy, index) => (
+                            <div key={`${strategy.name || 'strategy'}-${index}`} className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                              <span className={`truncate text-sm font-medium ${strongText}`}>{strategy.name || 'Saved strategy'}</span>
+                              <button
+                                onClick={() => setSavedStrategies(savedStrategies.filter((_, itemIndex) => itemIndex !== index))}
+                                className={`flex h-8 w-8 items-center justify-center rounded-lg border ${buttonGhost}`}
+                                aria-label="Remove saved strategy"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  </aside>
                 </div>
-                <button className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${isDark ? 'bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#e8e8e8] border border-[#3a3a3a]' : 'bg-white hover:bg-[#f5f5f0] text-[#2a2a2a] border border-[#d0d0d0]'}`}>
-                  Save Risk Rules
-                </button>
-              </div>
-            </div>
+              )}
+
+              {activeTab === 'profile' && (
+                <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+                  <section className={`rounded-lg border p-5 ${panelClass}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-300 via-cyan-300 to-amber-300 text-xl font-bold text-[#101317]">
+                          {userInitials || 'MM'}
+                        </div>
+                        <div>
+                          <p className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${subtleText}`}>Identity vault</p>
+                          <h2 className={`mt-1 text-2xl font-semibold ${strongText}`}>{user.fullName || 'Micromax User'}</h2>
+                          <p className={`text-sm ${mutedText}`}>{user.email || 'No email connected'}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100' : 'border-emerald-700/20 bg-emerald-50 text-emerald-800'}`}>
+                        <Shield className="h-4 w-4" />
+                        Access verified
+                      </span>
+                    </div>
+
+                    <div className="mt-6 grid gap-3 md:grid-cols-3">
+                      {[
+                        { label: 'Full name', value: user.fullName || 'Not set', icon: User },
+                        { label: 'Email address', value: user.email || 'Not set', icon: Mail },
+                        { label: 'Phone number', value: user.phone || 'Not set', icon: Phone },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={item.label} className={`rounded-lg border p-4 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                            <Icon className={`h-4 w-4 ${mutedText}`} />
+                            <p className={`mt-4 text-[10px] font-semibold uppercase tracking-[0.18em] ${subtleText}`}>{item.label}</p>
+                            <p className={`mt-2 truncate text-sm font-semibold ${strongText}`}>{item.value}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+
+                  <aside className={`rounded-lg border p-5 ${panelClass}`}>
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4 text-amber-300" />
+                      <h3 className={`text-sm font-semibold ${strongText}`}>Security controls</h3>
+                    </div>
+                    <p className={`mt-3 text-sm leading-6 ${mutedText}`}>Review password access and sign out of this workspace when you are done.</p>
+
+                    {!isChangingPassword ? (
+                      <button onClick={() => setIsChangingPassword(true)} className={`mt-5 flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors ${buttonGhost}`}>
+                        <Lock className="h-4 w-4" />
+                        Review password flow
+                      </button>
+                    ) : (
+                      <div className="mt-5 space-y-3">
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(event) => setCurrentPassword(event.target.value)}
+                          placeholder="Current password"
+                          className={`w-full rounded-lg border px-4 py-3 text-sm outline-none ${inputClass}`}
+                        />
+                        <input
+                          type="password"
+                          value={newPassword}
+                          onChange={(event) => setNewPassword(event.target.value)}
+                          placeholder="New password"
+                          className={`w-full rounded-lg border px-4 py-3 text-sm outline-none ${inputClass}`}
+                        />
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                          placeholder="Confirm new password"
+                          className={`w-full rounded-lg border px-4 py-3 text-sm outline-none ${inputClass}`}
+                        />
+                        {passwordError && <p className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">{passwordError}</p>}
+                        {passwordSuccess && <p className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-200">{passwordSuccess}</p>}
+                        <div className="grid grid-cols-2 gap-2">
+                          <button onClick={handleChangePassword} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-[#101317] hover:bg-amber-200">
+                            Check
+                          </button>
+                          <button onClick={handleClearPasswordForm} className={`rounded-lg border px-3 py-2 text-sm font-semibold ${buttonGhost}`}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <button onClick={onSignOut} className={`mt-4 flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-semibold transition-colors ${dangerButton}`}>
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </aside>
+                </div>
+              )}
+            </main>
           </div>
-        )}
 
-        {/* Content - Profile Tab */}
-        {activeTab === 'profile' && (
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="space-y-4">
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-2 ${
-                    isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'
-                  }`}
-                >
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  defaultValue={user.fullName}
-                  disabled
-                  className={`w-full px-4 py-2 rounded-lg border opacity-50 cursor-not-allowed ${
-                    isDark
-                      ? 'bg-[#232323] border-[#3a3a3a] text-[#e8e8e8]'
-                      : 'bg-[#f5f5f0] border-[#d0d0d0] text-[#2a2a2a]'
-                  }`}
-                />
-                <p className={`text-xs mt-1 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
-                  Name cannot be changed at this time
-                </p>
-              </div>
-
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-2 ${
-                    isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'
-                  }`}
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  defaultValue={user.email}
-                  disabled
-                  className={`w-full px-4 py-2 rounded-lg border opacity-50 cursor-not-allowed ${
-                    isDark
-                      ? 'bg-[#232323] border-[#3a3a3a] text-[#e8e8e8]'
-                      : 'bg-[#f5f5f0] border-[#d0d0d0] text-[#2a2a2a]'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label
-                  className={`block text-sm font-medium mb-2 ${
-                    isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'
-                  }`}
-                >
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  defaultValue={user.phone}
-                  disabled
-                  className={`w-full px-4 py-2 rounded-lg border opacity-50 cursor-not-allowed ${
-                    isDark
-                      ? 'bg-[#232323] border-[#3a3a3a] text-[#e8e8e8]'
-                      : 'bg-[#f5f5f0] border-[#d0d0d0] text-[#2a2a2a]'
-                  }`}
-                />
-                <p className={`text-xs mt-1 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
-                  Profile information cannot be changed at this time. Please contact support for updates.
-                </p>
-              </div>
+          <div className={`flex items-center justify-between gap-3 border-t px-4 py-3 text-xs sm:px-5 ${isDark ? 'border-white/10 bg-black/30 text-white/45' : 'border-black/10 bg-white/60 text-black/45'}`}>
+            <div className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 shrink-0" />
+              <span className="truncate">Settings state is scoped to this signed-in workspace.</span>
             </div>
+            <button onClick={onClose} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${buttonGhost}`}>
+              Done
+            </button>
           </div>
-        )}
-
-        {/* Footer */}
-        <div
-          className={`p-4 border-t ${
-            isDark ? 'border-[#3a3a3a]' : 'border-[#d0d0d0]'
-          } flex gap-3`}
-        >
-          <button
-            onClick={onClose}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#e8e8e8]'
-                : 'bg-[#f5f5f0] hover:bg-[#ece8df] text-[#2a2a2a] border border-[#d0d0d0]'
-            }`}
-          >
-            Close
-          </button>
-          <button
-            onClick={onSignOut}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-              isDark
-                ? 'bg-red-900/20 hover:bg-red-900/30 text-red-300 border border-red-500/30'
-                : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200'
-            }`}
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
         </div>
       </div>
     </>
