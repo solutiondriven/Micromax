@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, UserPlus, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LogIn, UserPlus, Send, CheckCircle2, AlertCircle, Users } from 'lucide-react';
 // import telegramIcon from 'figma:asset/8edea62b401b9473c284dd35607fbf7d227ce8a6.png';
 import { AuthUser, supabaseAuth } from '../services/supabaseAuth';
 
@@ -85,6 +85,12 @@ export function LoginModal({ onLogin, isDark }: LoginModalProps) {
     // Open Telegram bot with /start command
     console.log('📱 Opening Telegram bot with /start command...');
     window.open('https://t.me/Impulsehub_bot?start=signup', '_blank');
+  };
+
+  const handleGuestLogin = () => {
+    console.log('👤 Guest login initiated');
+    const guestUser = supabaseAuth.createGuestUser();
+    onLogin(guestUser);
   };
 
   return (
@@ -300,6 +306,25 @@ export function LoginModal({ onLogin, isDark }: LoginModalProps) {
                 ? 'Already have an account? Sign in'
                 : "Don't have an account? Sign up"}
             </button>
+          </div>
+
+          {/* Guest Login Button */}
+          <div className="pt-4 border-t border-dashed" style={{borderColor: isDark ? '#3a3a3a' : '#d0d0d0'}}>
+            <p className={`text-xs text-center mb-3 ${isDark ? 'text-[#6a6a6a]' : 'text-[#8a8a8a]'}`}>
+              Not ready to login?
+            </p>
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isSubmitting}
+              className={`w-full ${isDark ? 'bg-[#3a3a3a] hover:bg-[#4a4a4a] border-[#4a4a4a] text-[#e8e8e8] disabled:opacity-50' : 'bg-[#e8e8e8] hover:bg-[#d8d8d8] border-[#c0c0c0] text-[#2a2a2a] disabled:opacity-50'} font-medium py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 border`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Continue as Guest</span>
+            </button>
+            <p className={`text-xs text-center mt-2 ${isDark ? 'text-[#5a5a5a]' : 'text-[#9a9a9a]'}`}>
+              Full features available • No sign up needed
+            </p>
           </div>
         </form>
 

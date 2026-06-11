@@ -11,11 +11,14 @@ export interface AuthUser {
   fullName: string;
   phone: string;
   telegramId: string;
-  createdAt?: string;  plan: 'free' | 'pro' | 'elite' | 'unlimited';
+  createdAt?: string;
+  plan: 'free' | 'pro' | 'elite' | 'unlimited';
   sessionCount: number;
   screenshotCount: number;
   screenShareCount: number;
-  totalSessions: number;}
+  totalSessions: number;
+  isGuest?: boolean;
+}
 
 interface AuthMetadata {
   full_name?: string;
@@ -172,6 +175,36 @@ export interface SignInPayload {
 }
 
 export const supabaseAuth = {
+  createGuestUser(): AuthUser {
+    const guestUser: AuthUser = {
+      id: `guest_${Date.now()}`,
+      email: `guest${Date.now()}@impulse-hub.local`,
+      fullName: 'Guest User',
+      phone: '',
+      telegramId: '',
+      plan: 'free',
+      sessionCount: 0,
+      screenshotCount: 0,
+      screenShareCount: 0,
+      totalSessions: 0,
+      isGuest: true,
+    };
+
+    // Store guest session
+    const guestSession: StoredSession = {
+      accessToken: 'guest_token',
+      refreshToken: '',
+      expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+      user: guestUser,
+    };
+
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(guestSession));
+    sessionStorage.setItem(USER_INFO_KEY, JSON.stringify(guestUser));
+
+    console.log('👤 Guest user created:', guestUser.id);
+    return guestUser;
+  },
+
   async signUp(payload: SignUpPayload): Promise<AuthUser> {
     if (!payload.email || !payload.password) {
       throw new AuthError('Email and password are required');
