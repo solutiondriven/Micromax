@@ -102,6 +102,7 @@ router.post('/provision/direct', requireProvisioning, async (req, res) => {
     res.status(201).json({
       success: true,
       accountId,
+      configurationLink: createResult.configurationLink,
       status: 'DEPLOYING',
       message: 'Account created and deploying. Check status with GET /api/accounts/:accountId/status'
     });

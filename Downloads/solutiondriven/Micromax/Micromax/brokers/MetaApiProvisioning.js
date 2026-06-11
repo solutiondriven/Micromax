@@ -161,9 +161,21 @@ class MetaApiProvisioning {
       });
       console.log(`Account ${accountId} is deploying`);
 
+      let configurationLink;
+      try {
+        const configurationResponse = await this.request({
+          method: 'put',
+          url: `/users/current/accounts/${accountId}/configuration-link`,
+        });
+        configurationLink = configurationResponse.data.configurationLink;
+      } catch (configError) {
+        console.warn(`Unable to fetch configuration link for ${accountId}: ${configError.message}`);
+      }
+
       return {
         success: true,
         accountId,
+        configurationLink,
         status: 'DEPLOYING'
       };
     } catch (error) {

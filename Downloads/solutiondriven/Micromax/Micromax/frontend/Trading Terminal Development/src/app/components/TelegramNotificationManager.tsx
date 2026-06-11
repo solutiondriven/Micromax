@@ -56,25 +56,45 @@ export function TelegramNotificationManager({
 
   return (
     <div
-      className={`p-6 rounded-lg border ${
+      className={`p-7 rounded-[28px] border shadow-[0_22px_60px_rgba(0,0,0,0.16)] ${
         isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-[#f5f5f0] border-[#d0d0d0]'
       }`}
     >
-      <div className="flex items-center gap-3 mb-6">
-        <Bell className={`w-6 h-6 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`} />
-        <h2 className={`text-lg font-semibold ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
-          Telegram Notifications
-        </h2>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm border ${
+              isDark ? 'bg-[#232323] border-[#3a3a3a]' : 'bg-white border-[#d0d0d0]'
+            }`}
+          >
+            <Bell className={`w-5 h-5 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`} />
+          </div>
+          <div>
+            <h2 className={`text-[22px] font-semibold tracking-tight ${isDark ? 'text-[#e8e8e8]' : 'text-[#2a2a2a]'}`}>
+              Telegram Notifications
+            </h2>
+            <p className={`text-xs mt-1 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
+              Premium alert delivery for your account
+            </p>
+          </div>
+        </div>
+        <span
+          className={`px-3 py-1.5 rounded-full text-[11px] font-medium border ${
+            isDark ? 'bg-[#232323] border-[#3a3a3a] text-[#d6d6d6]' : 'bg-white border-[#d0d0d0] text-[#4a4a4a]'
+          }`}
+        >
+          Ready
+        </span>
       </div>
 
-      <p className={`text-sm mb-4 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
+      <p className={`text-sm mb-6 leading-6 ${isDark ? 'text-[#9a9a9a]' : 'text-[#6a6a6a]'}`}>
         Receive real-time alerts when Micromax identifies trading opportunities.
         Get instant notifications in your private Telegram chat.
       </p>
 
       {user.telegramId && (
         <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
+          className={`mb-4 p-4 rounded-[20px] flex items-start gap-3 shadow-sm border ${
             isDark
               ? 'bg-green-900/20 border border-green-500/30'
               : 'bg-green-50 border border-green-200'
@@ -98,7 +118,7 @@ export function TelegramNotificationManager({
 
       {error && (
         <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
+          className={`mb-4 p-4 rounded-[20px] flex items-start gap-3 shadow-sm border ${
             isDark ? 'bg-red-900/20 border border-red-500/30' : 'bg-red-50 border border-red-200'
           }`}
         >
@@ -113,7 +133,7 @@ export function TelegramNotificationManager({
 
       {success && (
         <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 ${
+          className={`mb-4 p-4 rounded-[20px] flex items-start gap-3 border ${
             isDark
               ? 'bg-green-900/20 border border-green-500/30'
               : 'bg-green-50 border border-green-200'
@@ -128,7 +148,8 @@ export function TelegramNotificationManager({
         </div>
       )}
 
-      <div className="space-y-4 mb-4">
+      <div className={`mb-4 p-4 rounded-[22px] border ${isDark ? 'bg-[#232323] border-[#3a3a3a]' : 'bg-white border-[#d0d0d0]'}`}>
+        <div className="space-y-4">
         <div>
           <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
             Telegram User ID
@@ -140,7 +161,7 @@ export function TelegramNotificationManager({
             onBlur={handleTelegramBlur}
             placeholder="Enter your Telegram User ID (numeric only)"
             disabled={isLoading}
-            className={`w-full px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+            className={`w-full px-4 py-3 rounded-xl transition-colors disabled:opacity-50 ${
               telegramId && !isValid
                 ? isDark
                   ? 'bg-red-900/20 border border-red-500/50 text-slate-100 placeholder-slate-400 focus:border-red-500 focus:outline-none'
@@ -167,7 +188,7 @@ export function TelegramNotificationManager({
           )}
         </div>
 
-        <div className={`p-3 rounded-lg text-xs ${isDark ? 'bg-[#232323]' : 'bg-white'}`}>
+        <div className={`p-4 rounded-[18px] text-xs ${isDark ? 'bg-[#1f1f1f]' : 'bg-[#f5f5f0]'} border ${isDark ? 'border-[#3a3a3a]' : 'border-[#d0d0d0]'}`}>
           <p className={`font-semibold mb-2 ${isDark ? 'text-[#d6d6d6]' : 'text-[#4a4a4a]'}`}>
             How to find your Telegram ID:
           </p>
@@ -181,13 +202,14 @@ export function TelegramNotificationManager({
           </ol>
         </div>
       </div>
+      </div>
 
       <div className="space-y-3">
         <button
           type="button"
           onClick={handleOpenTelegramBot}
           disabled={isLoading}
-          className={`w-full px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+          className={`w-full px-4 py-3 rounded-[18px] font-medium transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_10px_24px_rgba(0,0,0,0.12)] ${
             isDark
               ? 'bg-[#1f1f1f] hover:bg-[#252525] text-[#e8e8e8] border border-[#3a3a3a]'
               : 'bg-white hover:bg-[#f5f5f0] text-[#2a2a2a] border border-[#d0d0d0]'
@@ -203,7 +225,7 @@ export function TelegramNotificationManager({
       </div>
 
       <div
-        className={`mt-4 p-3 rounded-lg text-xs border ${
+        className={`mt-4 p-4 rounded-[20px] text-xs border shadow-sm ${
           isDark ? 'bg-[#232323] border-[#3a3a3a] text-[#9a9a9a]' : 'bg-white border-[#d0d0d0] text-[#6a6a6a]'
         }`}
       >

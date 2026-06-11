@@ -1,0 +1,15 @@
+
+> @figma/my-make-file@0.0.1 dev
+> vite --host 127.0.0.1
+
+Port 5173 is in use, trying another one...
+Port 5174 is in use, trying another one...
+
+  [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m1667[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5175[22m/[39m
+[2m5:28:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\User\Downloads\solutiondriven\Micromax\Micromax\frontend\Trading Terminal Development\src\app\components\UserSettingsPage.tsx, /src/styles/index.css[22m
+[2m5:28:53 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\User\Downloads\solutiondriven\Micromax\Micromax\frontend\Trading Terminal Development\src\app\components\UserSettingsPage.tsx, /src/styles/index.css[22m
+[2m5:29:38 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\User\Downloads\solutiondriven\Micromax\Micromax\frontend\Trading Terminal Development\src\app\components\UserSettingsPage.tsx, /src/styles/index.css[22m
+[2m5:34:10 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\User\Downloads\solutiondriven\Micromax\Micromax\frontend\Trading Terminal Development\src\app\components\UserSettingsPage.tsx, /src/styles/index.css[22m
+[2m5:34:32 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/@fs/C:\Users\User\Downloads\solutiondriven\Micromax\Micromax\frontend\Trading Terminal Development\src\app\components\UserSettingsPage.tsx, /src/styles/index.css[22m

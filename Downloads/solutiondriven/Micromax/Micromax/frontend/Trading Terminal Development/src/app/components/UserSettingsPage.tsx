@@ -190,42 +190,42 @@ export function UserSettingsPage({
     {
       id: 'overview' as const,
       title: 'Command Center',
-      kicker: 'Live workspace',
-      description: 'Account, alerts, strategy, and AI status in one dashboard.',
+      kicker: 'Dashboard',
+      description: 'Profile, alerts, strategy, and notes in one place.',
       icon: Activity,
-      accent: 'from-cyan-400 to-emerald-400',
+      accent: 'from-cyan-300 to-emerald-300',
     },
     {
       id: 'journal' as const,
-      title: 'Journal Hearth',
+      title: 'Jotting Notebook',
       kicker: 'Recent notes',
-      description: 'A warmer place for reflections, tags, and market memory.',
+      description: 'A calmer space for trade reflections and ideas.',
       icon: BookOpen,
-      accent: 'from-rose-200 to-amber-300',
+      accent: 'from-amber-200 to-rose-300',
     },
     {
       id: 'notifications' as const,
-      title: 'Signal Relay',
+      title: 'Telegram Flow',
       kicker: 'Telegram',
-      description: 'Route market alerts through your verified notification lane.',
+      description: 'Keep alerts, signal delivery, and bot access visible.',
       icon: RadioTower,
-      accent: 'from-sky-400 to-violet-400',
+      accent: 'from-sky-300 to-violet-300',
     },
     {
       id: 'strategies' as const,
       title: 'Strategy Lab',
       kicker: 'AI builder',
-      description: 'Turn trading ideas into rules, code, and saved playbooks.',
+      description: 'Shape, test, and save your trading logic.',
       icon: Zap,
-      accent: 'from-amber-300 to-rose-400',
+      accent: 'from-slate-300 to-cyan-200',
     },
     {
       id: 'profile' as const,
-      title: 'Identity Vault',
-      kicker: 'Security',
-      description: 'Profile details, access state, and security controls.',
+      title: 'Profile Vault',
+      kicker: 'Identity',
+      description: 'Read-only identity details and account info.',
       icon: Shield,
-      accent: 'from-emerald-300 to-teal-500',
+      accent: 'from-zinc-200 to-slate-300',
     },
   ];
 
@@ -233,19 +233,19 @@ export function UserSettingsPage({
   const ActiveIcon = activeTabMeta.icon;
 
   const shellClass = isDark
-    ? 'border-white/10 bg-[#090b0f] text-white shadow-[0_30px_100px_rgba(0,0,0,0.7)]'
+    ? 'border-white/10 bg-[#0b0c0f] text-white shadow-[0_30px_100px_rgba(0,0,0,0.72)]'
     : 'border-black/10 bg-[#f7f8f4] text-[#101317] shadow-[0_30px_100px_rgba(18,25,32,0.22)]';
   const panelClass = isDark
-    ? 'border-white/10 bg-white/[0.045]'
-    : 'border-black/10 bg-white/80';
+    ? 'border-white/10 bg-[#1b1b1d]'
+    : 'border-black/10 bg-white/88';
   const strongText = isDark ? 'text-white' : 'text-[#101317]';
-  const mutedText = isDark ? 'text-white/58' : 'text-black/55';
-  const subtleText = isDark ? 'text-white/38' : 'text-black/38';
+  const mutedText = isDark ? 'text-white/50' : 'text-black/55';
+  const subtleText = isDark ? 'text-white/32' : 'text-black/38';
   const inputClass = isDark
     ? 'border-white/10 bg-black/35 text-white placeholder:text-white/32 focus:border-cyan-300/50'
     : 'border-black/10 bg-white text-[#101317] placeholder:text-black/32 focus:border-cyan-600/40';
   const buttonGhost = isDark
-    ? 'border-white/10 bg-white/[0.05] text-white hover:bg-white/[0.09]'
+    ? 'border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]'
     : 'border-black/10 bg-white text-[#101317] hover:bg-black/[0.04]';
   const dangerButton = isDark
     ? 'border-rose-400/25 bg-rose-500/12 text-rose-100 hover:bg-rose-500/18'
@@ -319,7 +319,7 @@ export function UserSettingsPage({
                 </div>
               )}
               <div className="min-w-0">
-                <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleText}`}>Micromax settings</p>
+                <p className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${subtleText}`}>Dashboard settings</p>
                 <h1 className="truncate text-xl font-semibold tracking-normal sm:text-2xl">{activeTabMeta.title}</h1>
               </div>
             </div>
@@ -339,10 +339,10 @@ export function UserSettingsPage({
           </header>
 
           <div className="grid min-h-0 flex-1 lg:grid-cols-[310px_1fr]">
-            <aside className={`hidden border-r p-4 lg:block ${isDark ? 'border-white/10 bg-black/20' : 'border-black/10 bg-white/45'}`}>
+            <aside className={`hidden border-r p-4 lg:block ${isDark ? 'border-white/10 bg-[#131313]' : 'border-black/10 bg-white/45'}`}>
               <div className={`rounded-lg border p-4 ${panelClass}`}>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-300 via-emerald-300 to-amber-300 text-sm font-bold text-[#101317]">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg text-sm font-bold ${isDark ? 'bg-[#f2f2f2] text-[#111]' : 'bg-[#101317] text-white'}`}>
                     {userInitials || 'MM'}
                   </div>
                   <div className="min-w-0">
@@ -351,11 +351,11 @@ export function UserSettingsPage({
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-[#232323]' : 'border-black/10 bg-white'}`}>
                     <p className={subtleText}>Plan</p>
                     <p className={`mt-1 font-semibold capitalize ${strongText}`}>{user.plan || 'free'}</p>
                   </div>
-                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-black/25' : 'border-black/10 bg-white'}`}>
+                  <div className={`rounded-lg border p-3 ${isDark ? 'border-white/10 bg-[#232323]' : 'border-black/10 bg-white'}`}>
                     <p className={subtleText}>Access</p>
                     <p className="mt-1 font-semibold text-emerald-400">Verified</p>
                   </div>
@@ -373,12 +373,12 @@ export function UserSettingsPage({
                       className={`group relative flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-all duration-300 ease-out hover:shadow-[0_18px_45px_rgba(15,23,42,0.14)] active:translate-y-0 ${
                         isActive
                           ? isDark
-                            ? 'border-cyan-300/35 bg-white/[0.09] shadow-[0_16px_50px_rgba(34,211,238,0.08)]'
+                            ? 'border-white/10 bg-[#343434] shadow-[0_16px_50px_rgba(0,0,0,0.24)]'
                             : 'border-cyan-700/25 bg-white shadow-[0_16px_42px_rgba(14,116,144,0.12)]'
                           : `${panelClass} hover:-translate-y-1 hover:scale-[1.015]`
                       }`}
                     >
-                      <span className={`mt-1 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${tab.accent} text-[#101317] shadow-sm transition-all duration-300 group-hover:-rotate-3 group-hover:scale-110 group-active:scale-95`}>
+                      <span className={`mt-1 flex h-9 w-9 items-center justify-center rounded-lg shadow-sm transition-all duration-300 group-hover:-rotate-3 group-hover:scale-110 group-active:scale-95 ${isDark ? (isActive ? 'bg-[#f2f2f2] text-[#111]' : 'bg-[#262626] text-white/75') : `bg-gradient-to-br ${tab.accent} text-[#101317]`}`}>
                         <Icon className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5" />
                       </span>
                       <span className="min-w-0 flex-1">

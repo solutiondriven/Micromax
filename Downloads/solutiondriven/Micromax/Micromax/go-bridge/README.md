@@ -12,6 +12,11 @@ It does three things:
 
 `api/server-real.js` currently broadcasts in a sequential loop. This worker gives you a separate service that can fan out the same signal across many follower accounts in parallel.
 
+It also exposes live balance probes for Binance and Bitget:
+
+- `GET /balance/binance`
+- `GET /balance/bitget`
+
 ## Expected follower schema
 
 The worker reads from a Supabase table that returns rows shaped like this:
@@ -79,13 +84,26 @@ A successful bridge response should ideally return JSON with fields like:
 2. Copy `.env.example` to `.env`.
 3. Set your Supabase URL and service role key.
 4. Point `MT5_BRIDGE_URL` to your local MT5 WebSocket or REST bridge adapter.
-5. Run:
+5. Set `BINANCE_API_KEY`, `BINANCE_SECRET_KEY`, `BITGET_API_KEY`, `BITGET_SECRET_KEY`, and `BITGET_PASSPHRASE` if you want the balance endpoints.
+6. Set `PROXY_URL` if you want outbound exchange requests to go through Webshare.
+7. Run:
 
 ```bash
 go run .
 ```
 
 The worker listens on `http://localhost:8081` by default.
+
+## Balance test
+
+Once the exchange credentials are set, you can test live connectivity without placing a trade:
+
+```bash
+curl http://localhost:8081/balance/binance
+curl http://localhost:8081/balance/bitget
+```
+
+Each response returns the raw balances plus a non-zero filtered list.
 
 ## Test request
 

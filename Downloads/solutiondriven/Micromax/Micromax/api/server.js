@@ -11,6 +11,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { spawn } = require('child_process');
+const { AiGateway } = require('./aiGateway');
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +23,7 @@ app.use(express.json());
 // ============================================
 
 let mt5Manager = null;
+const aiGateway = new AiGateway();
 
 // MT5 Manager class - handles Python subprocess communication
 class MT5Manager {
@@ -66,6 +68,74 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     mt5_connected: mt5Manager?.connected || false
   });
+});
+
+// ============================================
+// AI GATEWAY
+// ============================================
+
+function getAiRateLimitKey(req, bodyUserId) {
+  return bodyUserId || req.headers['x-user-id'] || req.ip || 'guest';
+}
+
+app.get('/api/ai/models', (req, res) => {
+  res.json({
+    success: true,
+    policy: aiGateway.getPolicy(),
+    allowedModels: aiGateway.getAvailableModels(),
+  });
+});
+
+app.post('/api/ai/chat', async (req, res) => {
+  const body = req.body || {};
+
+  try {
+    const result = await aiGateway.generateText({
+      task: body.task || 'chat',
+      userId: getAiRateLimitKey(req, body.userId),
+      messages: Array.isArray(body.messages) ? body.messages : [],
+      model: body.model,
+      temperature: body.temperature,
+      maxTokens: body.maxTokens,
+    });
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message,
+      remaining: error.remaining || null,
+    });
+  }
+});
+
+app.post('/api/ai/analyze-chart', async (req, res) => {
+  const body = req.body || {};
+
+  try {
+    const result = await aiGateway.analyzeChart({
+      userId: getAiRateLimitKey(req, body.userId),
+      imageBase64: body.imageBase64 || '',
+      userQuery: body.userQuery,
+      model: body.model,
+      temperature: body.temperature,
+      maxTokens: body.maxTokens,
+    });
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      error: error.message,
+      remaining: error.remaining || null,
+    });
+  }
 });
 
 // ============================================
