@@ -12,7 +12,7 @@
 **Required Layer:** 💡 Foundry IQ (Agentic Knowledge Retrieval)  
 **Live Deployment Engines:**
 - 🔗 [Quick Market Analyzer](https://impulsehub.tech)
-- 🎯 [Trading Terminal - Login to Trade](https://trading.impulsehub.tech)
+- 🎯 [Trading Terminal - Live Demo](https://trading.impulsehub.tech/?i=1) ✨ **NOW LIVE**
 
 ---
 
@@ -130,13 +130,23 @@ This architecture is deliberately structured to maximize points across the **Age
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 📍 Live Demo
+**The Trading Terminal is now live and deployed in production!**
+- 🌐 **Live URL:** https://trading.impulsehub.tech/?i=1
+- No setup required—just visit the link to see it in action
+- Multi-tenant isolation, AI reasoning, and real-time data ingestion live
+
+### Local Development Setup
+
+For developers who want to build and run locally:
+
+#### Prerequisites
 ```bash
 Node.js 18+
 npm 9+
 ```
 
-### 1. Clone & Install Dependencies
+#### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/solutiondriven/Micromax.git
@@ -263,7 +273,36 @@ Graceful Degradation: Return mock response with notice
 
 ---
 
-## 📊 Demo Script for Judges
+## 📊 Live Demo - View in Production
+
+### 🌐 Production URL
+Visit the live Trading Terminal: **https://trading.impulsehub.tech/?i=1**
+
+### Demo Flow (2 minutes)
+
+**Moment 1: Show Isolation**
+> *"Watch what happens when I switch between trader profiles..."*
+- Click profile carousel: **You** → **Victor** → **Seun**
+- Point out: *"Notice how the chat history is empty for each profile? Each trader has completely isolated data running live in production."*
+
+**Moment 2: Show AI Reasoning**
+> *"Now let's ask a trading question..."*
+- Type: "What's my risk per trade based on my rules?"
+- **Expected Response**: *"Based on your 2% risk per trade rule from your profile..."*
+- Point out: *"Gemini is grounding its answer in YOUR isolated strategy rules from Foundry IQ—this is running live, not a demo."*
+
+**Moment 3: Show Multi-Tenant Awareness**
+- Switch to Victor's profile
+- Same question: "What's my risk per trade?"
+- **Expected**: *"Based on Victor's 3% risk per trade rule..."*
+- **Judge Sees**: *"The AI seamlessly adapted to Victor's different rules without any context bleeding. That's production-grade multi-tenancy deployed live."*
+
+**Closing Statement**:
+> *"This architecture shows three things judges care about: (1) Real data isolation using Foundry IQ filters—not mock, (2) Intelligent AI reasoning with Gemini grounding responses in isolated context, and (3) Production resilience with Azure OpenAI as fallback. Everything you're seeing is live at https://trading.impulsehub.tech/?i=1"*
+
+---
+
+## 📊 Local Development Demo (for testing)
 
 ### Setup (5 seconds)
 1. Open http://localhost:5173
