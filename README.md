@@ -1,4 +1,4 @@
-# 📈 MicroMax: AI Trading Dashboard (ImpulseHub Engine)
+# 📈 MicroMax: AI Trading (ImpulseHub Engine)
 
 **Project Scope:** High-Performance Execution & Intelligent Reasoning Workspace
 
