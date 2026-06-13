@@ -130,74 +130,105 @@ This architecture is deliberately structured to maximize points across the **Age
 
 ## 🚀 Quick Start
 
-### 📍 Live Demo
-**The Trading Terminal is now live and deployed in production!**
+### 📍 Live Demo (UI Preview)
+**Experience the interface in production:**
 - 🌐 **Live URL:** https://trading.impulsehub.tech/?i=1
-- No setup required—just visit the link to see it in action
-- Multi-tenant isolation, AI reasoning, and real-time data ingestion live
+- See the user experience and multi-tenant profile switching
 
-### Local Development Setup
+> **For Hackathon Judges:** The complete agent implementation with Foundry IQ integration and backend orchestration is in this repository. Follow the local setup below to run the full system.
 
-For developers who want to build and run locally:
+---
+
+### ⚙️ Local Development - Full Agent Architecture
+
+This is the complete implementation that judges should evaluate.
 
 #### Prerequisites
 ```bash
-Node.js 18+
-npm 9+
+Node.js 20.x
+npm 9.x+
 ```
 
-#### 1. Clone & Install Dependencies
+#### 1. Clone Repository
 
 ```bash
 git clone https://github.com/solutiondriven/Micromax.git
 cd Micromax/Micromax
+```
 
-# Backend
+#### 2. Backend Setup (Node.js + Express)
+
+```bash
 cd api
 npm install
 
-# Frontend (in new terminal)
+# Configure backend - copy template
+cp .env.example .env
+
+# Edit .env with your API credentials:
+# GEMINI_API_KEY=your_gemini_key
+# AZURE_SEARCH_ENDPOINT=your_azure_endpoint
+# AZURE_SEARCH_ADMIN_KEY=your_azure_key
+# PORT=3000
+```
+
+**Start Backend Server:**
+```bash
+npm run dev
+# Backend runs on http://localhost:3000
+# Implements:
+# - Foundry IQ retrieval (knowledge grounding)
+# - Gemini API orchestration (reasoning engine)
+# - Risk safeguards & confidence scoring
+# - Multi-tenant user isolation
+```
+
+#### 3. Frontend Setup (React + Vite)
+
+```bash
 cd ../frontend/Trading\ Terminal\ Development
 npm install
+
+# Configure frontend
+cp .env.example .env.local
+
+# Edit .env.local:
+# VITE_AI_GATEWAY_URL=http://localhost:3000
 ```
 
-### 2. Configure Environment Variables
-
-**Backend** (`.env`):
-```env
-GEMINI_API_KEY=your_google_gemini_api_key
-GOOGLE_API_KEY=your_google_api_key
-
-AZURE_SEARCH_ENDPOINT=https://solutiondriven.search.windows.net
-AZURE_SEARCH_ADMIN_KEY=your_azure_search_key
-
-PORT=3000
-NODE_ENV=development
-AI_ALLOWED_MODELS=gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash
-```
-
-**Frontend** (`.env.local`):
-```env
-VITE_GOOGLE_API_KEY=your_google_gemini_api_key
-VITE_GEMINI_API_KEY=your_google_gemini_api_key
-VITE_AI_GATEWAY_URL=http://localhost:3000
-VITE_DEBUG_AI=false
-```
-
-### 3. Start Backend Server
-
+**Start Frontend Dev Server (new terminal):**
 ```bash
-cd api
-npm start
-# Server runs on http://localhost:3000
-```
-
-### 4. Start Frontend Dev Server (new terminal)
-
-```bash
-cd frontend/Trading\ Terminal\ Development
 npm run dev
-# App runs on http://localhost:5173
+# Frontend runs on http://localhost:5173
+# Communicates with backend API only (no direct Gemini access)
+```
+
+#### 4. Test the Agent
+
+1. Open http://localhost:5173
+2. Click "Ask Micromax"
+3. Type a trading question: *"What's my optimal position size?"*
+4. **Observe the full flow:**
+   ```
+   Frontend → Backend API (/api/ai/chat)
+            ↓
+   Backend retrieves context from Foundry IQ
+            ↓
+   Backend sends grounded context to Gemini
+            ↓
+   Gemini applies multi-step reasoning
+            ↓
+   Backend calculates confidence score
+            ↓
+   Frontend displays response with citations
+   ```
+
+#### 5. Production Build
+
+```bash
+cd ../frontend/Trading\ Terminal\ Development
+npm run build
+# Generates: dist/index.html, dist/assets/
 ```
 
 ### 5. Test the System
@@ -209,6 +240,100 @@ npm run dev
 5. **Expected**: Gemini responds with trading advice grounded in the user's isolated rules
 6. Click profile carousel to switch traders → Notice AI adapts risk guidance per user
 7. **That's the multi-tenant magic** ✨
+
+---
+
+## 🎥 Demo Video (For Hackathon Judges)
+
+**Recommended:** Create a 3-minute demo video showing:
+
+```
+1. Clone & Install (30 seconds)
+   - Show: git clone
+   - Show: npm install in both backend and frontend
+   
+2. Start Backend (15 seconds)
+   - Show: npm run dev in api/ folder
+   - Show: Server listening on port 3000
+   - Show: Backend console ready for requests
+   
+3. Start Frontend (15 seconds)
+   - Show: npm run dev in frontend folder
+   - Show: Frontend opens on port 5173
+   
+4. Test the Agent (2 minutes)
+   - Ask: "What's my optimal BTC position given my 2% risk rule?"
+   - Show: Network tab → POST /api/ai/chat
+   - Show: Backend retrieves from Foundry IQ
+   - Show: Gemini processes with grounded context
+   - Show: Response with citations and confidence score
+   
+5. Multi-Tenant Isolation (30 seconds)
+   - Switch profiles: You → Victor → Seun
+   - Ask: Same question to each
+   - Show: AI adapts response based on each trader's unique rules
+   - Show: Zero context bleeding between users
+```
+
+**Why this matters for judges:**
+- Shows the backend is actually working (not a static demo)
+- Proves Foundry IQ integration functions correctly
+- Demonstrates multi-tenant isolation live
+- Proves citations and confidence scoring work
+- Proves reproducibility (any judge can run it themselves)
+
+---
+
+## ✅ Why This Architecture (Backend-First)
+
+### The Challenge
+When building AI-powered applications, there's a temptation to call Gemini directly from the browser:
+
+```javascript
+// ❌ Anti-pattern (direct browser → Gemini)
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const response = await genAI.generateContent(userMessage);
+```
+
+This approach:
+- ❌ Exposes API keys to frontend code (security risk)
+- ❌ Allows users to abuse your Gemini quota
+- ❌ Cannot enforce user-specific permission filters
+- ❌ Lacks backend business logic & safeguards
+
+### The Solution (This Repository)
+We implement the **proven pattern for production AI agents**:
+
+```
+User Request (React Frontend)
+            ↓
+Backend API (/api/ai/chat)
+            ↓
+Foundry IQ (Retrieve permission-isolated knowledge)
+            ↓
+Gemini (Multi-step reasoning)
+            ↓
+Risk Calculation & Confidence Scoring (Backend)
+            ↓
+Response with Citations (React Frontend)
+```
+
+**Benefits:**
+- ✅ API keys protected in backend `.env` only
+- ✅ Foundry IQ filters enforce strict tenant isolation
+- ✅ Backend implements business logic (risk checks, safeguards)
+- ✅ Confidence scoring and citations apply server-side
+- ✅ Multi-step agent orchestration is reproducible
+
+### For Hackathon Judges
+This architecture demonstrates:
+
+| Criterion | Implementation |
+|-----------|-----------------|
+| **Accuracy & Relevance** | Backend retrieves permission-filtered knowledge from Foundry IQ |
+| **Reasoning & Multi-step** | Gemini receives grounded context from verified data sources |
+| **Reliability & Safety** | Backend applies risk checks before returning responses |
+| **Code Quality** | Clear separation: Frontend (UX) vs Backend (Agent Logic) |
 
 ---
 
